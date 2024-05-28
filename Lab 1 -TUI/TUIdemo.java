@@ -1,5 +1,6 @@
 package com.mybank.tui;
 
+import com.mybank.domain.*;
 import jexer.TAction;
 import jexer.TApplication;
 import jexer.TField;
@@ -20,6 +21,15 @@ public class TUIdemo extends TApplication {
     public static void main(String[] args) throws Exception {
         TUIdemo tdemo = new TUIdemo();
         (new Thread(tdemo)).start();
+
+        Bank.addCustomer("Mark", "Tkachenko");
+        Bank.addCustomer("Andrew", "165");
+
+        Customer customer1 = Bank.getCustomer(0);
+        customer1.addAccount(new CheckingAccount(6912123.32));
+
+        Customer customer2 = Bank.getCustomer(1);
+        customer2.addAccount(new SavingsAccount(42.00, 0.02));
     }
 
     public TUIdemo() throws Exception {
@@ -71,10 +81,29 @@ public class TUIdemo extends TApplication {
             public void DO() {
                 try {
                     int custNum = Integer.parseInt(custNo.getText());
-                    //details about customer with index==custNum
-                    details.setText("Owner Name: John Doe (id="+custNum+")\nAccount Type: 'Checking'\nAccount Balance: $200.00");
-                } catch (Exception e) {
+
+                    if (custNum < 0 || custNum >= Bank.getNumberOfCustomers()) {
+                        throw new IndexOutOfBoundsException("Invalid customer number");
+                    }
+
+                    Customer customer = Bank.getCustomer(custNum);
+                    String ownerName = customer.getFirstName() + " " + customer.getLastName();
+
+                    if (customer.getNumberOfAccounts() == 0) {
+                        details.setText("Owner Name: " + ownerName + "\nNo accounts found.");
+                    } else {
+                        Account account = customer.getAccount(0);
+                        String accountType = account instanceof CheckingAccount ? "Checking" : "Savings";
+                        double accountBalance = account.getBalance();
+
+                        details.setText("Owner Name: " + ownerName +
+                                "\nAccount Type: " + accountType +
+                                "\nAccount Balance: $" + accountBalance);
+                    }
+                } catch (NumberFormatException e) {
                     messageBox("Error", "You must provide a valid customer number!").show();
+                } catch (IndexOutOfBoundsException e) {
+                    messageBox("Error", "Invalid customer number!").show();
                 }
             }
         });
